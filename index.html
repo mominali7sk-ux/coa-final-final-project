@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090d14" />
+    <meta
+      name="description"
+      content="CacheOracle — an interactive cache replacement policy simulator and benchmark lab."
+    />
+    <title>CacheOracle — AI Cache Replacement Predictor · COA Lab</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="CacheOracle home">
+        <span class="brand-mark" aria-hidden="true">▦</span>
+        <span class="brand-copy">
+          <strong>CacheOracle</strong>
+          <small>AI CACHE REPLACEMENT PREDICTOR · COA LAB</small>
+        </span>
+      </a>
+      <div class="header-actions">
+        <span class="engine-badge"><span class="pulse"></span> LOCAL ENGINE</span>
+        <button class="icon-button" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">☼</button>
+        <button class="button button-quiet" id="ask-ai" disabled>✦ <span>Ask AI</span></button>
+        <button class="button button-primary" id="export-button" disabled>⇩ <span>Export</span></button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <section class="panel geometry-panel">
+          <div class="section-heading">
+            <div>
+              <h2>Cache geometry</h2>
+              <p>32-bit address space — the bit splitter updates live.</p>
+            </div>
+          </div>
+          <div class="geometry-fields">
+            <label class="field">
+              <span class="field-label">Cache size</span>
+              <select id="cache-size">
+                <option value="4">4 KB</option><option value="8">8 KB</option>
+                <option value="16" selected>16 KB</option><option value="32">32 KB</option>
+                <option value="64">64 KB</option>
+              </select>
+              <input id="cache-size-number" type="number" min="1" max="1024" value="16" aria-label="Cache size in KB" />
+            </label>
+            <label class="field">
+              <span class="field-label">Block size</span>
+              <select id="block-size">
+                <option value="16">16 B</option><option value="32">32 B</option>
+                <option value="64" selected>64 B</option><option value="128">128 B</option>
+              </select>
+              <input id="block-size-number" type="number" min="1" max="4096" value="64" aria-label="Block size in bytes" />
+            </label>
+            <label class="field">
+              <span class="field-label">Associativity</span>
+              <select id="associativity">
+                <option value="1">Direct mapped</option><option value="2">2-way set associative</option>
+                <option value="4" selected>4-way set associative</option><option value="8">8-way set associative</option>
+                <option value="fully">Fully associative</option>
+              </select>
+              <input id="ways-number" type="number" min="1" max="1024" value="4" aria-label="Associativity in ways" />
+            </label>
+          </div>
+          <div class="bit-split" aria-label="Address bit breakdown">
+            <div class="bit-item tag"><span>TAG</span><strong id="tag-bits">20 b</strong></div>
+            <div class="bit-item index"><span>INDEX</span><strong id="index-bits">6 b</strong></div>
+            <div class="bit-item offset"><span>OFFSET</span><strong id="offset-bits">6 b</strong></div>
+          </div>
+          <div class="geometry-summary">
+            <span><strong id="set-count">64</strong> sets</span>
+            <span><strong id="ways-count">4</strong> lines/set</span>
+            <span><strong id="line-count">256</strong> total lines</span>
+          </div>
+          <div class="validation-message" id="geometry-error" role="alert"></div>
+        </section>
+
+        <section class="panel trace-panel">
+          <div class="section-heading">
+            <div>
+              <h2>Access trace</h2>
+              <p>Generate a classic pattern, paste addresses, or reuse a saved trace.</p>
+            </div>
+          </div>
+          <div class="tab-list compact-tabs" role="tablist" aria-label="Trace source">
+            <button class="tab active" data-trace-tab="presets" role="tab" aria-selected="true">Presets</button>
+            <button class="tab" data-trace-tab="paste" role="tab" aria-selected="false">Paste</button>
+            <button class="tab" data-trace-tab="saved" role="tab" aria-selected="false">Saved</button>
+          </div>
+          <div class="trace-tab-content" id="trace-content"></div>
+          <div class="loaded-trace">
+            <span>Loaded trace</span>
+            <strong id="trace-count">1,024 addresses</strong>
+          </div>
+        </section>
+
+        <div class="run-area">
+          <button class="button button-primary run-button" id="run-benchmark">▶ <span>Run benchmark</span></button>
+          <p id="run-caption">LRU · FIFO · LFU · Random · Belady OPT · AI — on 1,024 accesses</p>
+        </div>
+      </aside>
+
+      <main id="main-content">
+        <section class="empty-state" id="empty-state">
+          <div class="empty-icon" aria-hidden="true">⌁</div>
+          <p class="eyebrow">CACHE POLICY LAB</p>
+          <h1>Point the scope at your memory trace.</h1>
+          <p class="empty-description">
+            Configure the cache geometry on the left, load or generate an access trace, and run all six
+            replacement policies — including Belady's OPT and an online Markov AI predictor — in one benchmark pass.
+          </p>
+          <button class="button button-primary" id="load-demo">✦ <span>Load demo benchmark</span></button>
+          <p class="hint">768 conflict-trashing addresses loaded — choose a preset or just hit Run.</p>
+        </section>
+
+        <section class="results hidden" id="results">
+          <section class="panel timeline-panel">
+            <div class="panel-title-row">
+              <div>
+                <div class="eyebrow">ACCESS TIMELINE</div>
+                <h2>Trace at a glance <span class="subtle" id="timeline-policy">AI Predictor</span></h2>
+              </div>
+              <div class="zoom-control"><span>ZOOM</span><button data-zoom="1" class="active">1×</button><button data-zoom="2">2×</button><button data-zoom="4">4×</button><button data-zoom="8">8×</button></div>
+            </div>
+            <div class="timeline-wrap" id="timeline"></div>
+            <div class="legend">
+              <span><i class="dot hit"></i>hit</span><span><i class="dot miss"></i>miss</span>
+              <span><i class="dot eviction"></i>eviction</span><span><i class="dot opt"></i>OPT would miss</span>
+              <span><i class="legend-playhead"></i>playhead</span>
+              <span class="legend-tail" id="timeline-caption">1,024 accesses · click to inspect</span>
+            </div>
+            <div class="timeline-inspector hidden" id="timeline-inspector"></div>
+          </section>
+
+          <div class="tab-list results-tabs" role="tablist" aria-label="Benchmark views">
+            <button class="tab active" data-result-tab="comparison" role="tab" aria-selected="true">Comparison</button>
+            <button class="tab" data-result-tab="step" role="tab" aria-selected="false">Step-through</button>
+            <button class="tab" data-result-tab="insights" role="tab" aria-selected="false">AI insights</button>
+          </div>
+          <div id="result-content"></div>
+        </section>
+      </main>
+    </div>
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    <dialog id="ai-dialog" class="modal">
+      <div class="modal-head"><div><p class="eyebrow">CACHEORACLE ASSISTANT</p><h2>Benchmark readout</h2></div><button class="icon-button close-dialog" aria-label="Close">×</button></div>
+      <div id="ai-dialog-content"></div>
+    </dialog>
+    <script src="./app.js"></script>
+  </body>
+</html>
